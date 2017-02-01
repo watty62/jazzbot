@@ -1,20 +1,68 @@
 #!/usr/bin/python
-import os
-import time
+import os, time
 from slackclient import SlackClient
-
-from secrets import SLACK_BOT_TOKEN, BOT_ID
-
-# starterbot's ID as an environment variable
-#BOT_ID = os.environ.get("BOT_ID")
+from secrets import SLACK_BOT_TOKEN, BOT_ID # <== Storing my authentication there
+response = ""
 
 # constants
 AT_BOT = "<@" + BOT_ID + ">"
-EXAMPLE_COMMAND = "do"
+WHAT_COMMAND = "what"
+ALBUM_COMMAND = "album"
+HELP_COMMAND = "help"
+HOWMANY_COMMAND = "how"
 
 # instantiate Slack & Twilio clients
 slack_client = SlackClient(SLACK_BOT_TOKEN)
 
+def handle_album(commands):
+    """
+      Process the album command
+    """
+    response = "Fake response - a place holder for real DB query response\n\n"
+    response += "I have 2 albums called '*So What*'. These are by\n"
+    response += "*Al Cohn*\n"
+    response += "*Zoot Sims*\n"
+    return response
+
+def handle_howmany(commands):
+    """
+      Process the how_many command
+    """
+    # Place holder for real DB query response
+    response = "Fake response - a place holder for real DB query response\n\n"
+    response += "I have 5 albums by Charlie Parker. These are \n"
+    response += "to list these ask 'What Charlie Parker?'"
+
+    return response
+
+def handle_what(commands):
+    """
+      Process the what command
+    """
+    # Place holder for real DB query response
+    response = "Fake response - a place holder for real DB query response\n\n"
+    response += "I have 3 albums by Miles Davis. These are \n"
+    response += "*Bitches Brew*\n"
+    response += "*Miles Ahead*\n"
+    response += "*Filles De Kilamanjairo*"
+
+    return response
+
+def handle_help(commands):
+    """
+      Process the help command
+    """
+    # Place holder for any attachments we want to send
+    
+    response = "I'm just a collection of 1s and 0s so the famous phrase 'garbage in, garbage out' applies to me.\n So far I've evolved to understand\n"
+
+    # Add help message for each command
+    response += "*" + HELP_COMMAND + "* - shows this message\n"
+    response += "*" + WHAT_COMMAND + "* - returns which ablbums I have by an artist\n \t e.g.: 'What Miles Davis?' will show what Miles Davis Albums I have \n"
+    response += "*" + HOWMANY_COMMAND + "* - shows you how many albums I have by an artist \n \t e.g. 'How many Charlie Parker?' will count how many Charlie Parker albums I have. \n"
+    response += "*" + ALBUM_COMMAND + "* - shows which albums I have of that name\n \t e.g. 'Album Stardust?'' will show which albums I have named Stardust \n"
+
+    return response
 
 def handle_command(command, channel):
     """
@@ -22,13 +70,20 @@ def handle_command(command, channel):
         are valid commands. If so, then acts on the commands. If not,
         returns back what it needs for clarification.
     """
-    response = "Not sure what you mean. Use the *" + EXAMPLE_COMMAND + \
-               "* command with numbers, delimited by spaces."
-    if command.startswith(EXAMPLE_COMMAND):
-    	if "the ironing" in command:
-    		response = "It is already plugged in and steaming"
+    commands = command.split()
+
+
+    if commands[0].lower() == WHAT_COMMAND:
+        response = handle_what(commands)
+    elif commands[0].lower() == ALBUM_COMMAND:
+        response = handle_album(commands)
+    elif commands[0].lower() == HOWMANY_COMMAND and commands[1].lower() == 'many':
+        response = handle_howmany (commands)
+    elif commands[0].lower() == HELP_COMMAND:
+        response = handle_help (commands)
     else:
-	        response = "Sure...write some more code then I can do that!"
+        response = "I'm not sure what you mean. Try *'@jazzbot help'* for more options."
+
     slack_client.api_call("chat.postMessage", channel=channel,
                           text=response, as_user=True)
 
