@@ -6,6 +6,7 @@ from secrets import SLACK_BOT_TOKEN, BOT_ID # <== Storing my authentication ther
 # constants
 AT_BOT = "<@" + BOT_ID + ">"
 WHAT_COMMAND = "what"
+WILDART_COMMAND = "wild"
 ALBUM_COMMAND = "album"
 HELP_COMMAND = "help"
 COUNT_COMMAND = "count"
@@ -70,6 +71,32 @@ def handle_count(command):
     return response
     cur.close()
 
+def handle_wildartist(command):
+    """
+      Process the wildcard command
+    """
+    
+    conn = sqlite3.connect('myjazzalbums.sqlite')
+    cur = conn.cursor()
+
+    if command [-1] == "?": 
+        artist_name = "%"+command[5:-1].strip().title()+"%"
+    else: 
+        artist_name = "%"+command[5:].strip().title()+"%"
+
+    cur.execute (" SELECT Artist.name, Album.title FROM Album JOIN Artist ON Artist.id = Album.artist_id WHERE Artist.name LIKE ?" , (artist_name,) )
+    #c.execute('SELECT * FROM stocks WHERE symbol=?', t)
+    count = 0
+    response =  ''
+
+    for row in cur :
+        response += "*"+row[0]+ "*: "+ row[1]
+        count = count + 1
+    
+    response = "I have "+ str(count) + " albums where the artist incudes " + artist_name.split("%")[1]+ "\n" + response
+    return response
+    cur.close()     
+
 
 def handle_what(command):
     """
@@ -102,14 +129,16 @@ def handle_help(commands):
     """
     # Place holder for any attachments we want to send
     
-    response = "My capabilities are few, but generally well-executed. \nI find that when mistakes are made it is not at my end. So, to keep you right, here are some pointers:\n"
+    response = "My capabilities are few, but generally well-executed. \nI find that when mistakes do happen it is not at my end. So, to keep you right, here are some pointers:\n"
 
     # Add help message for each command
     response += "*" + HELP_COMMAND + "* - shows this message\n"
-    response += "*" + WHAT_COMMAND + "* - returns which albums I have by an artist\n \t e.g.: 'What Miles Davis?' will show what Miles Davis Albums I have \n"
-    response += "*" + COUNT_COMMAND + "* - shows you how many albums I have by an artist \n \t e.g. 'Count Count Basie?' will count how many Count Basie albums I have. \n"
-    response += "*" + ALBUM_COMMAND + "* - shows which albums I have of that name\n \t e.g. 'Album Stardust?'' will show which albums I have named Stardust \n"
-
+    response += "*" + WHAT_COMMAND + "* - returns which albums I have by an artist\n \t e.g.: *'What Miles Davis?'*' will show what Miles Davis Albums I have \n"
+    response += "*" + WILDART_COMMAND + "* - is a wildcard search which shows all albums where the artist name partially matches the query \n \t e.g *'Wild Sonny?'*' will match albums by Sonny Stitt or Sonny Rollins\n"
+    response += "*" + COUNT_COMMAND + "* - shows you how many albums I have by an artist \n \t e.g. *'Count Count Basie?'*' will count how many Count Basie albums I have. \n"
+    response += "*" + ALBUM_COMMAND + "* - shows which albums I have of that name\n \t e.g. *'Album Stardust?'* will show which albums I have named Stardust \n"
+    response += "And in all queries the '?' is optional, as are capitals.\n"
+    
     return response
 
 def handle_command(command, channel):
@@ -121,6 +150,8 @@ def handle_command(command, channel):
     
     if command.lower().startswith(WHAT_COMMAND):
         response = handle_what(command)
+    if command.lower().startswith(WILDART_COMMAND):
+        response = handle_wildartist(command)
     elif command.lower().startswith(ALBUM_COMMAND):
         response = handle_album(command)
     elif command.lower().startswith(COUNT_COMMAND):
