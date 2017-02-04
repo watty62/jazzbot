@@ -7,7 +7,7 @@ from secrets import SLACK_BOT_TOKEN, BOT_ID # <== Storing my authentication ther
 AT_BOT = "<@" + BOT_ID + ">"
 ARTIST_COMMAND = "artist"
 WILDART_COMMAND = "%artist%"
-#WILD_ALBUM - "%album%"
+WILDALBUM_COMMAND = "%album%"
 ALBUM_COMMAND = "album"
 HELP_COMMAND = "help"
 COUNT_COMMAND = "count"
@@ -99,6 +99,32 @@ def handle_wildartist(command):
     cur.close()     
 
 
+def handle_wildalbum(command):
+    """
+      Process the wildalbumcommand
+    """
+    
+    conn = sqlite3.connect('myjazzalbums.sqlite')
+    cur = conn.cursor()
+
+    if command [-1] == "?": 
+        album_name = "%"+command[8:-1].strip()+"%"
+    else: 
+        album_name = "%"+command[8:].strip()+"%"
+
+    cur.execute (" SELECT Artist.name, Album.title FROM Album JOIN Artist ON Artist.id = Album.artist_id WHERE Album.title LIKE ? ORDER BY Album.title" , (album_name,) )
+    
+    count = 0
+    response =  ''
+
+    for row in cur :
+        response += "*"+row[1]+ "*: "+ row[0]+"\n"
+        count = count + 1
+    
+    response = "I have "+ str(count) + " albums where the album incudes *" + album_name.split("%")[1]+ "*\n" + response
+    return response
+    cur.close()     
+
 def handle_artist(command):
     """
       Process the artist command
@@ -137,8 +163,9 @@ def handle_help(commands):
     # Add help message for each command
     response += "*" + HELP_COMMAND + "* - shows this message\n"
     response += "*" + ARTIST_COMMAND + "* - returns which albums I have by an artist\n \t e.g.: *'Artist Miles Davis?'*' will show what Miles Davis Albums I have \n"
-    response += "*" + WILDART_COMMAND + "* - is a wildcard search which shows all albums where the artist name partially matches the query \n \t e.g *'Wild Sonny?'*' will match albums by Sonny Stitt or Sonny Rollins\n"
+    response += "*" + WILDART_COMMAND + "* - is a wildcard search which shows all albums where the artist name partially matches the query \n \t e.g *'%Artist% Sonny?'*' will match albums by Sonny Stitt or Sonny Rollins\n"
     response += "*" + ALBUM_COMMAND + "* - shows which albums I have of that name\n \t e.g. *'Album Stardust?'* will show which albums I have named Stardust \n"
+    response += "*" + WILDALBUM_COMMAND + "* - is a wildcard search which shows all albums where the title partially matches the query \n \t e.g *'%album% Star?'*' will match albums with the names Star Highs and Stardust. \n"
     response += "*" + COUNT_COMMAND + "* - shows you how many albums I have by an artist \n \t e.g. *'Count Count Basie?'*' will count how many Count Basie albums I have. \n"
     response += "And in all queries the '?' is optional, as are capitals.\n"
     
@@ -157,6 +184,8 @@ def handle_command(command, channel):
         response = handle_wildartist(command)
     elif command.lower().startswith(ALBUM_COMMAND):
         response = handle_album(command)
+    elif command.lower().startswith(WILDALBUM_COMMAND):
+        response = handle_wildalbum(command)
     elif command.lower().startswith(COUNT_COMMAND):
         response = handle_count (command)
     elif command.lower().startswith(HELP_COMMAND):
