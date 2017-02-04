@@ -5,8 +5,9 @@ from secrets import SLACK_BOT_TOKEN, BOT_ID # <== Storing my authentication ther
 
 # constants
 AT_BOT = "<@" + BOT_ID + ">"
-WHAT_COMMAND = "what"
-WILDART_COMMAND = "wild"
+ARTIST_COMMAND = "artist"
+WILDART_COMMAND = "%artist%"
+#WILD_ALBUM - "%album%"
 ALBUM_COMMAND = "album"
 HELP_COMMAND = "help"
 COUNT_COMMAND = "count"
@@ -33,7 +34,7 @@ def handle_album(command):
         album_name = command[5:].strip()
     print "Album name = " + "'" + album_name +"'"
 
-    cur.execute (" SELECT Artist.name FROM Album JOIN Artist ON Artist.id = Album.artist_id WHERE Album.title =?" , (album_name + "\n",) )
+    cur.execute (" SELECT Artist.name FROM Album JOIN Artist ON Artist.id = Album.artist_id WHERE Album.title =?", (album_name,) )
         
     count = 0
     response =  'Albums called ' + album_name + '\n'
@@ -62,12 +63,12 @@ def handle_count(command):
         artist_name = command[5:].strip().title()
 
     cur.execute (" SELECT Album.title FROM Album JOIN Artist ON Artist.id = Album.artist_id WHERE Artist.name =?" , (artist_name,) )
-    #c.execute('SELECT * FROM stocks WHERE symbol=?', t)
+    
     count = 0
 
     for row in cur :
         count = count + 1
-    response = 'I have '+ str (count) + ' albums for ' + artist_name + ':\nIf you want to know the titles use the command *what* ' + artist_name
+    response = 'I have '+ str (count) + ' albums for ' + artist_name + ':\nIf you want to know the titles use the command *artist* ' + artist_name
     return response
     cur.close()
 
@@ -80,9 +81,9 @@ def handle_wildartist(command):
     cur = conn.cursor()
 
     if command [-1] == "?": 
-        artist_name = "%"+command[5:-1].strip().title()+"%"
+        artist_name = "%"+command[8:-1].strip().title()+"%"
     else: 
-        artist_name = "%"+command[5:].strip().title()+"%"
+        artist_name = "%"+command[8:].strip().title()+"%"
 
     cur.execute (" SELECT Artist.name, Album.title FROM Album JOIN Artist ON Artist.id = Album.artist_id WHERE Artist.name LIKE ?" , (artist_name,) )
     #c.execute('SELECT * FROM stocks WHERE symbol=?', t)
@@ -90,36 +91,38 @@ def handle_wildartist(command):
     response =  ''
 
     for row in cur :
-        response += "*"+row[0]+ "*: "+ row[1]
+        response += "*"+row[0]+ "*: "+ row[1]+"\n"
         count = count + 1
     
-    response = "I have "+ str(count) + " albums where the artist incudes " + artist_name.split("%")[1]+ "\n" + response
+    response = "I have "+ str(count) + " albums where the artist incudes *" + artist_name.split("%")[1]+ "*\n" + response
     return response
     cur.close()     
 
 
-def handle_what(command):
+def handle_artist(command):
     """
-      Process the what command
+      Process the artist command
     """
-    
     conn = sqlite3.connect('myjazzalbums.sqlite')
     cur = conn.cursor()
 
+    print "command = " + command 
     if command [-1] == "?": 
-        artist_name = command[5:-1].strip().title()
+        artist_name = command[6:-1].strip().title()
     else: 
-        artist_name = command[5:].strip().title()
+        artist_name = command[6:].strip().title()
 
     cur.execute (" SELECT Album.title FROM Album JOIN Artist ON Artist.id = Album.artist_id WHERE Artist.name =?" , (artist_name,) )
-    #c.execute('SELECT * FROM stocks WHERE symbol=?', t)
+    
     count = 0
-    response =  'Albums for ' + artist_name + ':\n'
+
+    response =  'Albums for *' + artist_name + '*:\n'
 
     for row in cur :
-        response += row[0]
+        response += row[0]+ '\n'
         count = count + 1
     response = "I have "+ str (count) +" " +  response
+    
     return response
     cur.close()
 
@@ -133,10 +136,10 @@ def handle_help(commands):
 
     # Add help message for each command
     response += "*" + HELP_COMMAND + "* - shows this message\n"
-    response += "*" + WHAT_COMMAND + "* - returns which albums I have by an artist\n \t e.g.: *'What Miles Davis?'*' will show what Miles Davis Albums I have \n"
+    response += "*" + ARTIST_COMMAND + "* - returns which albums I have by an artist\n \t e.g.: *'Artist Miles Davis?'*' will show what Miles Davis Albums I have \n"
     response += "*" + WILDART_COMMAND + "* - is a wildcard search which shows all albums where the artist name partially matches the query \n \t e.g *'Wild Sonny?'*' will match albums by Sonny Stitt or Sonny Rollins\n"
-    response += "*" + COUNT_COMMAND + "* - shows you how many albums I have by an artist \n \t e.g. *'Count Count Basie?'*' will count how many Count Basie albums I have. \n"
     response += "*" + ALBUM_COMMAND + "* - shows which albums I have of that name\n \t e.g. *'Album Stardust?'* will show which albums I have named Stardust \n"
+    response += "*" + COUNT_COMMAND + "* - shows you how many albums I have by an artist \n \t e.g. *'Count Count Basie?'*' will count how many Count Basie albums I have. \n"
     response += "And in all queries the '?' is optional, as are capitals.\n"
     
     return response
@@ -148,9 +151,9 @@ def handle_command(command, channel):
         returns back what it needs for clarification.
     """
     
-    if command.lower().startswith(WHAT_COMMAND):
-        response = handle_what(command)
-    if command.lower().startswith(WILDART_COMMAND):
+    if command.lower().startswith(ARTIST_COMMAND):
+        response = handle_artist(command)
+    elif command.lower().startswith(WILDART_COMMAND):
         response = handle_wildartist(command)
     elif command.lower().startswith(ALBUM_COMMAND):
         response = handle_album(command)
@@ -186,7 +189,7 @@ def parse_slack_output(slack_rtm_output):
 if __name__ == "__main__":
     READ_WEBSOCKET_DELAY = 1 # 1 second delay between reading from firehose
     if slack_client.rtm_connect():
-        print("StarterBot connected and running!")
+        print("JazzBot connected and running!")
         while True and Alive :
             command, channel = parse_slack_output(slack_client.rtm_read())
             if command and channel:
