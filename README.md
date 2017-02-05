@@ -21,7 +21,12 @@ It is highly inspired by my friend [Andrew Sage](http://twitter.com/symboticaand
 
 My intention was to create somthing that I can query from afar and it will tell me if I have a particular album.
 
-Now working quite reliably.
+Now it is working quite reliably.
 
-Next step to deal with wildcard queries.
+If you are want to copy this for yourself follow the set-up instructions on Matt Makai's blog above.  
 
+I don't run my version in Virtualenv (although I should!), so I sore my credentials in a secrets.py file and import that, rather than exporting environment variables.
+
+Also, you'll need a couple of modules which can be installed using "sudo pip install" - sqlite3 and SlackCLient.
+
+Have fun!
