@@ -32,7 +32,6 @@ def handle_album(command):
         album_name = command[5:-1].strip()
     else: 
         album_name = command[5:].strip()
-    print "Album name = " + "'" + album_name +"'"
 
     cur.execute (" SELECT Artist.name FROM Album JOIN Artist ON Artist.id = Album.artist_id WHERE Album.title =?", (album_name,) )
         
@@ -132,22 +131,24 @@ def handle_artist(command):
     conn = sqlite3.connect('myjazzalbums.sqlite')
     cur = conn.cursor()
 
-    print "command = " + command 
     if command [-1] == "?": 
         artist_name = command[6:-1].strip().title()
     else: 
         artist_name = command[6:].strip().title()
+    if artist_name == "Kenny G":
+        response = "Why the f$ck would Ian have Kenny G in his collection?"
+    else: 
+        
+        cur.execute (" SELECT Album.title FROM Album JOIN Artist ON Artist.id = Album.artist_id WHERE Artist.name =?" , (artist_name,) )
+        
+        count = 0
 
-    cur.execute (" SELECT Album.title FROM Album JOIN Artist ON Artist.id = Album.artist_id WHERE Artist.name =?" , (artist_name,) )
-    
-    count = 0
+        response =  'Albums for *' + artist_name + '*:\n'
 
-    response =  'Albums for *' + artist_name + '*:\n'
-
-    for row in cur :
-        response += row[0]+ '\n'
-        count = count + 1
-    response = "I have "+ str (count) +" " +  response
+        for row in cur :
+            response += row[0]+ '\n'
+            count = count + 1
+        response = "I have "+ str (count) +" " +  response
     
     return response
     cur.close()
